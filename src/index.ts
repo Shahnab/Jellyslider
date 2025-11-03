@@ -46,6 +46,7 @@ import {
 } from './constants.ts';
 import { NumberProvider } from './numbers.ts';
 
+export async function initJellySlider() {
 const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
 const canvas = document.querySelector('canvas') as HTMLCanvasElement;
 const context = canvas.getContext('webgpu') as GPUCanvasContext;
@@ -697,7 +698,7 @@ const renderBackground = (
   );
 };
 
-const rayMarch = (rayOrigin: d.v3f, rayDirection: d.v3f, uv: d.v2f) => {
+const rayMarch = (rayOrigin: d.v3f, rayDirection: d.v3f, _uv: d.v2f) => {
   'use gpu';
   let totalSteps = d.u32();
 
@@ -1006,7 +1007,7 @@ async function autoSetQuaility() {
   return resolutionScale;
 }
 
-export const controls = {
+const controls = {
   'Quality': {
     initial: 'Auto',
     options: [
@@ -1066,9 +1067,12 @@ export const controls = {
   },
 };
 
-export function onCleanup() {
-  resizeObserver.disconnect();
-  root.destroy();
+  function onCleanup() {
+    resizeObserver.disconnect();
+    root.destroy();
+  }
+
+  return { controls, onCleanup };
 }
 
 // #endregion

@@ -398,7 +398,7 @@ export class Slider {
   }
 
   #computeControlPoints() {
-    const eps = 1e-6;
+    // const eps = 1e-6; // Currently unused but may be needed for future precision calculations
     for (let i = 0; i < this.n - 1; i++) {
       const A = this.#pos[i];
       const B = this.#pos[i + 1];
