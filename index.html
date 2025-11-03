@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jelly Slider</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(30, 30, 40, 0.9) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(40, 40, 50, 0.8) 0%, transparent 50%),
+                linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 25%, #1e1e1e 50%, #2a2a2a 75%, #1c1c1c 100%);
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Metallic texture overlay */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.01) 0%, transparent 50%);
+            background-size: 200px 200px, 300px 300px;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        /* Animated background particles */
+        body::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(1px 1px at 20px 30px, rgba(255, 255, 255, 0.1), transparent),
+                radial-gradient(1px 1px at 40px 70px, rgba(255, 255, 255, 0.08), transparent),
+                radial-gradient(1px 1px at 90px 40px, rgba(255, 255, 255, 0.06), transparent),
+                radial-gradient(1px 1px at 130px 80px, rgba(255, 255, 255, 0.04), transparent);
+            background-repeat: repeat;
+            background-size: 150px 150px, 200px 200px, 250px 250px, 300px 300px;
+            animation: float 20s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0px, 0px); }
+            33% { transform: translate(10px, -10px); }
+            66% { transform: translate(-5px, 5px); }
+        }
+
+        .glass-panel {
+            background: 
+                linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%),
+                rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 24px;
+            box-shadow: 
+                0 12px 40px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.15),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+            animation: panel-shimmer 4s ease-in-out infinite;
+        }
+
+        @keyframes panel-shimmer {
+            0%, 100% { left: -100%; }
+            50% { left: 100%; }
+        }
+
+        .glass-panel::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        }
+
+        .controls-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 300px;
+            max-width: calc(100vw - 40px);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* Mobile-first responsive design */
+        @media (max-width: 768px) {
+            .controls-container {
+                position: fixed;
+                bottom: 20px;
+                top: auto;
+                left: 20px;
+                right: 20px;
+                width: auto;
+                max-width: none;
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 12px;
+                justify-content: space-between;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .controls-container {
+                bottom: 10px;
+                left: 10px;
+                right: 10px;
+                gap: 8px;
+            }
+        }
+
+        .control-group {
+            padding: 20px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            min-height: 44px; /* Touch target minimum */
+        }
+
+        /* Mobile control group adjustments */
+        @media (max-width: 768px) {
+            .control-group {
+                padding: 16px;
+                flex: 1;
+                min-width: calc(50% - 6px);
+            }
+            
+            .control-group:nth-child(1),
+            .control-group:nth-child(2) {
+                min-width: calc(50% - 6px);
+            }
+            
+            .control-group:nth-child(3),
+            .control-group:nth-child(4) {
+                min-width: calc(50% - 6px);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .control-group {
+                padding: 14px;
+                min-width: 100%;
+                flex: none;
+            }
+        }
+
+        .control-group:hover {
+            background: 
+                linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.06) 100%),
+                rgba(0, 0, 0, 0.25);
+            border-color: rgba(255, 255, 255, 0.25);
+            transform: translateY(-3px);
+            box-shadow: 
+                0 16px 50px rgba(0, 0, 0, 0.5),
+                0 0 30px rgba(255, 255, 255, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .control-group:active {
+            transform: translateY(-1px);
+            transition: transform 0.1s ease;
+        }
+
+        .control-label {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        /* Mobile label adjustments */
+        @media (max-width: 768px) {
+            .control-label {
+                font-size: 12px;
+                margin-bottom: 10px;
+                letter-spacing: 0.3px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .control-label {
+                font-size: 11px;
+                margin-bottom: 8px;
+            }
+        }
+
+        /* Glass Select Dropdown */
+        .glass-select {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            font-weight: 400;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s ease;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 12px center;
+            background-repeat: no-repeat;
+            background-size: 16px;
+            padding-right: 40px;
+            min-height: 44px; /* Touch target */
+        }
+
+        /* Mobile select adjustments */
+        @media (max-width: 768px) {
+            .glass-select {
+                font-size: 13px;
+                padding: 14px 16px;
+                min-height: 48px;
+                padding-right: 44px;
+                background-size: 18px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .glass-select {
+                font-size: 14px;
+                padding: 16px 18px;
+                min-height: 52px;
+                padding-right: 48px;
+                background-size: 20px;
+            }
+        }
+
+        .glass-select:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        .glass-select:focus {
+            outline: none;
+            border-color: rgba(255, 165, 0, 0.5);
+            box-shadow: 0 0 0 3px rgba(255, 165, 0, 0.1);
+        }
+
+        .glass-select option {
+            background: #2a2a2a;
+            color: white;
+            padding: 8px;
+        }
+
+        /* Glass Slider */
+        .glass-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 10px;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 165, 0, 0.15) 100%);
+            border-radius: 8px;
+            outline: none;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            overflow: hidden;
+        }
+
+        .glass-slider::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent 0%, rgba(255, 165, 0, 0.1) 50%, transparent 100%);
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+
+        .glass-slider::-webkit-slider-track {
+            height: 10px;
+            background: transparent;
+            border-radius: 8px;
+        }
+
+        .glass-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            background: 
+                radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 70%),
+                linear-gradient(135deg, rgba(255, 165, 0, 0.3), rgba(255, 165, 0, 0.1));
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(15px);
+            box-shadow: 
+                0 6px 20px rgba(0, 0, 0, 0.4),
+                0 2px 10px rgba(255, 165, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            position: relative;
+        }
+
+        /* Mobile slider thumb - larger for better touch */
+        @media (max-width: 768px) {
+            .glass-slider::-webkit-slider-thumb {
+                width: 28px;
+                height: 28px;
+            }
+            
+            .glass-slider::-moz-range-thumb {
+                width: 28px;
+                height: 28px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .glass-slider::-webkit-slider-thumb {
+                width: 32px;
+                height: 32px;
+            }
+            
+            .glass-slider::-moz-range-thumb {
+                width: 32px;
+                height: 32px;
+            }
+        }
+
+        .glass-slider::-webkit-slider-thumb:hover {
+            background: 
+                radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.2) 70%),
+                linear-gradient(135deg, rgba(255, 165, 0, 0.5), rgba(255, 165, 0, 0.3));
+            border-color: rgba(255, 165, 0, 0.6);
+            transform: scale(1.15);
+            box-shadow: 
+                0 8px 30px rgba(0, 0, 0, 0.5),
+                0 4px 20px rgba(255, 165, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
+
+        .glass-slider::-webkit-slider-thumb:active {
+            transform: scale(1.05);
+        }
+
+        .glass-slider::-moz-range-track {
+            height: 10px;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 165, 0, 0.15) 100%);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-slider::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            background: 
+                radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 70%),
+                linear-gradient(135deg, rgba(255, 165, 0, 0.3), rgba(255, 165, 0, 0.1));
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 
+                0 6px 20px rgba(0, 0, 0, 0.4),
+                0 2px 10px rgba(255, 165, 0, 0.2);
+        }
+
+        /* Glass Color Input */
+        .glass-color {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 50px;
+            background: 
+                linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%),
+                rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(15px);
+            overflow: hidden;
+            position: relative;
+            min-height: 44px; /* Touch target */
+        }
+
+        /* Mobile color picker */
+        @media (max-width: 768px) {
+            .glass-color {
+                height: 54px;
+                min-height: 54px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .glass-color {
+                height: 58px;
+                min-height: 58px;
+            }
+        }
+
+        .glass-color::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.6s ease;
+            pointer-events: none;
+        }
+
+        .glass-color:hover::before {
+            left: 100%;
+        }
+
+        .glass-color:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 
+                0 10px 30px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .glass-color::-webkit-color-swatch-wrapper {
+            padding: 0;
+            border-radius: 13px;
+            overflow: hidden;
+        }
+
+        .glass-color::-webkit-color-swatch {
+            border: none;
+            border-radius: 13px;
+            margin: 5px;
+            box-shadow: 
+                0 4px 15px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+
+        /* Glass Toggle */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 8px;
+        }
+
+        .glass-toggle {
+            position: relative;
+            width: 64px;
+            height: 32px;
+            background: 
+                linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%),
+                rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(15px);
+            overflow: hidden;
+            min-height: 44px; /* Touch target */
+            display: flex;
+            align-items: center;
+        }
+
+        /* Mobile toggle sizing */
+        @media (max-width: 768px) {
+            .glass-toggle {
+                width: 72px;
+                height: 36px;
+                border-radius: 18px;
+            }
+            
+            .glass-toggle::before {
+                width: 30px;
+                height: 30px;
+                top: 2px;
+                left: 2px;
+            }
+            
+            .glass-toggle.active::before {
+                transform: translateX(36px);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .glass-toggle {
+                width: 80px;
+                height: 40px;
+                border-radius: 20px;
+            }
+            
+            .glass-toggle::before {
+                width: 34px;
+                height: 34px;
+                top: 2px;
+                left: 2px;
+            }
+            
+            .glass-toggle.active::before {
+                transform: translateX(40px);
+            }
+        }
+
+        .glass-toggle::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .glass-toggle:hover::after {
+            left: 100%;
+        }
+
+        .glass-toggle::before {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 26px;
+            height: 26px;
+            background: 
+                radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.2) 70%),
+                linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
+            border-radius: 50%;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            box-shadow: 
+                0 4px 12px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+            z-index: 2;
+        }
+
+        .glass-toggle:hover {
+            border-color: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-toggle.active {
+            background: 
+                linear-gradient(135deg, rgba(255, 165, 0, 0.25) 0%, rgba(255, 165, 0, 0.1) 100%),
+                rgba(255, 165, 0, 0.15);
+            border-color: rgba(255, 165, 0, 0.4);
+            box-shadow: 
+                0 0 25px rgba(255, 165, 0, 0.3),
+                inset 0 1px 0 rgba(255, 165, 0, 0.2);
+        }
+
+        .glass-toggle.active::before {
+            transform: translateX(32px);
+            background: 
+                radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.6) 0%, rgba(255, 165, 0, 0.4) 70%),
+                linear-gradient(135deg, rgba(255, 165, 0, 0.6), rgba(255, 165, 0, 0.3));
+            box-shadow: 
+                0 6px 20px rgba(255, 165, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4),
+                inset 0 -1px 0 rgba(255, 165, 0, 0.2);
+        }
+
+        .toggle-label {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 13px;
+            font-weight: 500;
+            min-width: 30px;
+            transition: color 0.3s ease;
+        }
+
+        #attribution {
+            opacity: 1;
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(20px);
+            color: rgba(255, 255, 255, 0.9);
+            padding: 12px 20px;
+            border-radius: 25px;
+            user-select: none;
+            pointer-events: auto;
+            transition: all 0.3s ease;
+            font-size: 13px;
+            text-align: center;
+            white-space: nowrap;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #attribution:hover {
+            background: rgba(0, 0, 0, 0.8);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        #attribution a {
+            color: #ffa500;
+            text-decoration: none;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        #attribution a:hover {
+            text-decoration: underline;
+        }
+
+        /* Canvas styling */
+        canvas {
+            border-radius: 20px;
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.5),
+                0 0 40px rgba(255, 255, 255, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(5px);
+            max-width: 100%;
+            max-height: calc(100vh - 40px);
+        }
+
+        /* Mobile canvas adjustments */
+        @media (max-width: 768px) {
+            canvas {
+                border-radius: 15px;
+                max-height: calc(100vh - 200px); /* Leave space for bottom controls */
+                margin-bottom: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            canvas {
+                border-radius: 12px;
+                max-height: calc(100vh - 220px);
+                margin-bottom: 15px;
+            }
+        }
+
+        /* Mobile body adjustments */
+        @media (max-width: 768px) {
+            body {
+                overflow-x: hidden;
+                overflow-y: auto;
+                padding: 10px;
+            }
+        }
+
+        /* Prevent zoom on mobile inputs */
+        @media (max-width: 768px) {
+            input, select, textarea {
+                font-size: 16px !important;
+            }
+        }
+
+        /* Touch-friendly hover states for mobile */
+        @media (hover: none) and (pointer: coarse) {
+            .control-group:hover {
+                transform: none;
+                background: 
+                    linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%),
+                    rgba(0, 0, 0, 0.2);
+            }
+            
+            .glass-select:hover,
+            .glass-color:hover {
+                transform: none;
+                border-color: rgba(255, 255, 255, 0.15);
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas></canvas>
+    <script type="module" src="/index.ts"></script>
+</body>
+</html>
